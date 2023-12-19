@@ -120,12 +120,17 @@ class GamesScreen extends Component {
     const { teamLogos } = this.state;
     const isExpanded = this.state.expandedGameIndex === index;
 
+
+    const isScheduled = item.status.toLowerCase().includes('scheduled') || item.status.toLowerCase().includes('pre-game');
+    const displayTime = isScheduled ? item.time : this.getFormattedTime(item.status);
+
+
     return (
-      <View>
+      <View style={{backgroundColor:'#f7f7f7'}}>
         <Pressable
           onPress={() => this.toggleGameExpansion(index)}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? 'grey' : 'white', // Change background color on press
+            backgroundColor: pressed ? 'lightgrey' : '#f7f7f7', // Change background color on press
           })}
         >
           <View style={styles.gameContainer}>
@@ -139,7 +144,7 @@ class GamesScreen extends Component {
             <View style={styles.vsContainer}>
               <Text style={styles.vsText}>vs</Text>
               <View style={styles.qContainer}>
-                <Text>{item.time}</Text>
+                <Text>{displayTime}</Text>
               </View>
             </View>
             <View style={styles.teamContainer}>
@@ -188,6 +193,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 10,
+    borderRadius: 10,
+    margin: 10,
+    borderWidth: 1,
+    backgroundColor: 'white',
+    borderColor: '#f7f7f7',
   },
   teamContainer: {
     flex: 1,
@@ -204,7 +214,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   vsContainer: {
-    width: 40, // Adjust the width as needed
+    width: 60, // Adjust the width as needed
     alignItems: 'center',
   },
   vsText: {
@@ -212,8 +222,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   qContainer: {
+    flex: 1,
     width: 80, // Adjust the width as needed
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   separator: {
     height: 1,
@@ -223,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 10,
     elevation: 5, // Add elevation to make it appear above other elements
-    backgroundColor: 'lightgrey',
+    backgroundColor: '#ebebeb',
   },
 });
 
