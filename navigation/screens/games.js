@@ -64,19 +64,25 @@ class GamesScreen extends Component {
   async loadGames() {
     const currentDate = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
     const url = `https://www.balldontlie.io/api/v1/games?start_date=${currentDate}&end_date=${currentDate}`;
-
-
+  
     try {
       const response = await axios.get(url, {
         headers: {
           Accept: 'application/json',
         },
       });
-
+  
+      // Sort games based on start time
+      const sortedGames = response.data.data.sort((a, b) => {
+        const startTimeA = new Date(a.status).getTime();
+        const startTimeB = new Date(b.status).getTime();
+        return startTimeA - startTimeB;
+      });
+  
       // Load team logos
-      const teamLogos = await this.loadTeamLogos(response.data.data);
-
-      this.setState({ games: response.data.data, teamLogos });
+      const teamLogos = await this.loadTeamLogos(sortedGames);
+  
+      this.setState({ games: sortedGames, teamLogos });
     } catch (e) {
       console.log(e);
     }
