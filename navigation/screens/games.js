@@ -110,10 +110,22 @@ class GamesScreen extends Component {
   getFormattedTime(date) {
     // Convert the UTC date to local time
     const localDate = new Date(date);
-    // Get the local time string
-    const localTime = localDate.toLocaleTimeString();
   
-    return localTime;
+    // Get the hours, minutes, and AM/PM
+    let hours = localDate.getHours();
+    const minutes = localDate.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+  
+    // Convert hours to 12-hour format
+    hours = hours % 12 || 12;
+  
+    // Ensure that single-digit minutes are formatted with a leading zero
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+  
+    // Construct the formatted time string
+    const formattedTime = `${hours}:${formattedMinutes} ${ampm}`;
+  
+    return formattedTime;
   }
 
   toggleGameExpansion(index) {
