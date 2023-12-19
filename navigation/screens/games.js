@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 
 // Define an object with logo names and paths
@@ -120,51 +120,49 @@ class GamesScreen extends Component {
     const { teamLogos } = this.state;
     const isExpanded = this.state.expandedGameIndex === index;
 
-
-    const isScheduled = item.status.toLowerCase().includes('scheduled') || item.status.toLowerCase().includes('pre-game');
-    const displayTime = isScheduled ? item.time : this.getFormattedTime(item.status);
-
+    
+    const displayTime = (this.getFormattedTime(item.status) === "Invalid Date") ? item.time : this.getFormattedTime(item.status)
 
     return (
-      <View style={{backgroundColor:'#f7f7f7'}}>
-        <Pressable
-          onPress={() => this.toggleGameExpansion(index)}
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? 'lightgrey' : '#f7f7f7', // Change background color on press
-          })}
-        >
-          <View style={styles.gameContainer}>
-            <View style={styles.teamContainer}>
-              <View style={styles.logoContainer}>
-                <Image source={teamLogos[item.home_team.full_name]} style={styles.logo} resizeMode="contain" />
+        <View style={{ backgroundColor: '#f7f7f7' }}>
+          <TouchableOpacity
+            onPress={() => this.toggleGameExpansion(index)}
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? 'lightgrey' : '#f7f7f7',
+            })}
+          >
+            <View style={styles.gameContainer}>
+              <View style={styles.teamContainer}>
+                <View style={styles.logoContainer}>
+                  <Image source={teamLogos[item.home_team.full_name]} style={styles.logo} resizeMode="contain" />
+                </View>
+                <Text>{item.home_team.full_name}</Text>
+                <Text>{item.home_team_score}</Text>
               </View>
-              <Text>{item.home_team.full_name}</Text>
-              <Text>{item.home_team_score}</Text>
-            </View>
-            <View style={styles.vsContainer}>
-              <Text style={styles.vsText}>vs</Text>
-              <View style={styles.qContainer}>
-                <Text>{displayTime}</Text>
+              <View style={styles.vsContainer}>
+                <Text style={styles.vsText}>vs</Text>
+                <View style={styles.qContainer}>
+                  <Text>{displayTime}</Text>
+                </View>
+              </View>
+              <View style={styles.teamContainer}>
+                <View style={styles.logoContainer}>
+                  <Image source={teamLogos[item.visitor_team.full_name]} style={styles.logo} resizeMode="contain" />
+                </View>
+                <Text>{item.visitor_team.full_name}</Text>
+                <Text>{item.visitor_team_score}</Text>
               </View>
             </View>
-            <View style={styles.teamContainer}>
-              <View style={styles.logoContainer}>
-                <Image source={teamLogos[item.visitor_team.full_name]} style={styles.logo} resizeMode="contain" />
-              </View>
-              <Text>{item.visitor_team.full_name}</Text>
-              <Text>{item.visitor_team_score}</Text>
+          </TouchableOpacity>
+          {isExpanded && (
+            <View style={styles.dropdownContainer}>
+              <Text>Top Scorer for {item.home_team.full_name}: {item.home_team_top_scorer}</Text>
+              <Text>Top Scorer for {item.visitor_team.full_name}: {item.visitor_team_top_scorer}</Text>
             </View>
-          </View>
-        </Pressable>
-        {isExpanded && (
-          <View style={styles.dropdownContainer}>
-            <Text>Top Scorer for {item.home_team.full_name}: {item.home_team_top_scorer}</Text>
-            <Text>Top Scorer for {item.visitor_team.full_name}: {item.visitor_team_top_scorer}</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
+          )}
+        </View>
+      );
+    };
 
   renderSeparator = () => {
     return <View style={styles.separator} />;
@@ -179,6 +177,7 @@ class GamesScreen extends Component {
         keyExtractor={(item, index) => index.toString()}
         renderItem={this.renderGameItem}
         ItemSeparatorComponent={this.renderSeparator}
+        showsVerticalScrollIndicator={false}
       />
     );
   }
@@ -224,7 +223,7 @@ const styles = StyleSheet.create({
   qContainer: {
     flex: 1,
     width: 80, // Adjust the width as needed
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   separator: {
     height: 1,
