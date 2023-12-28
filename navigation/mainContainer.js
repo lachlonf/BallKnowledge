@@ -40,19 +40,13 @@ function mainContainer() {
                     }
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                })}
-                tabBarStyle={{
-                backgroundColor: 'white', // Set your desired background color
-                padding: 10,
-                height: 70,
-                }}
-                tabBarItemStyle={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                }}
-                tabBarOptions={{
-                activeTintColor: 'grey',
-                }}>
+                tabBarActiveTintColor: "grey",
+                tabBarStyle:[{
+                    display: "flex"
+                },
+                null
+                ]
+                })}>
 
                 <Tab.Screen name={homeName} component = {HomeScreen}/>
                 <Tab.Screen name={gamesName} component = {GamesScreen}/>

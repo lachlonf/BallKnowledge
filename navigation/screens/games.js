@@ -63,31 +63,118 @@ class GamesScreen extends Component {
 
   async loadGames() {
     const currentDate = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
+    const testDate = '2023-12-27';
     const url = `https://www.balldontlie.io/api/v1/games?start_date=${currentDate}&end_date=${currentDate}`;
-  
+
     try {
       const response = await axios.get(url, {
         headers: {
           Accept: 'application/json',
         },
       });
-  
+
+      if (!response || !response.data || !response.data.data) {
+        throw new Error('Invalid or empty response.');
+      }
+
+      const games = response.data.data;
+
+      // Fetch stats for each game and update with top scorers
+      const gamesWithStats = [];
+      for (const game of games) {
+        const topScorers = await this.getTopScorersForGame(game.id, game);
+        if (topScorers) {
+          game.home_team_top_scorer = topScorers.homeTeam.topScorer;
+          game.home_team_pts = topScorers.homeTeam.points
+          game.home_team_rebs = topScorers.homeTeam.rebs
+          game.home_team_ast = topScorers.homeTeam.asts
+
+          game.visitor_team_top_scorer = topScorers.visitorTeam.topScorer;
+          game.visitor_team_pts = topScorers.visitorTeam.points
+          game.visitor_team_rebs = topScorers.visitorTeam.rebs
+          game.visitor_team_ast = topScorers.visitorTeam.asts
+        }
+        gamesWithStats.push(game);
+      }
+
       // Sort games based on start time
-      const sortedGames = response.data.data.sort((a, b) => {
+      const sortedGames = gamesWithStats.sort((a, b) => {
         const startTimeA = new Date(a.status).getTime();
         const startTimeB = new Date(b.status).getTime();
         return startTimeA - startTimeB;
       });
-  
+
       // Load team logos
       const teamLogos = await this.loadTeamLogos(sortedGames);
-  
+
       this.setState({ games: sortedGames, teamLogos });
     } catch (e) {
-      console.log(e);
+      console.error('Error loading games:', e);
     }
   }
 
+
+  async getTopScorersForGame(game_id, game) {
+    try {
+      const statsUrl = `https://www.balldontlie.io/api/v1/stats?game_ids[]=${game_id}&per_page=100`;
+      const statsResponse = await axios.get(statsUrl, {
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+  
+      if (!statsResponse || !statsResponse.data || !statsResponse.data.data) {
+        throw new Error(`Invalid or empty stats response for game ${game_id}.`);
+      }
+  
+      const allPlayerStats = statsResponse.data.data;
+      let homeTeamTopScorer = null;
+      let visitorTeamTopScorer = null;
+  
+      allPlayerStats.forEach((playerStat) => {
+        if (playerStat.team.id === game.home_team.id) {
+          if (!homeTeamTopScorer || playerStat.pts > homeTeamTopScorer.pts) {
+            homeTeamTopScorer = playerStat;
+          }
+        } else if (playerStat.team.id === game.visitor_team.id) {
+          if (!visitorTeamTopScorer || playerStat.pts > visitorTeamTopScorer.pts) {
+            visitorTeamTopScorer = playerStat;
+          }
+        }
+      });
+  
+      const homeTeamPoints = homeTeamTopScorer ? homeTeamTopScorer.pts || 0 : 0;
+      const homeTeamRebs = homeTeamTopScorer ? homeTeamTopScorer.reb || 0 : 0;
+      const homeTeamAsts = homeTeamTopScorer ? homeTeamTopScorer.ast || 0 : 0;
+      const visitorTeamPoints = visitorTeamTopScorer ? visitorTeamTopScorer.pts || 0 : 0;
+      const visitorTeamRebs = visitorTeamTopScorer ? visitorTeamTopScorer.reb || 0 : 0;
+      const visitorTeamAsts = visitorTeamTopScorer ? visitorTeamTopScorer.ast || 0 : 0;
+  
+      return {
+        homeTeam: {
+          topScorer: homeTeamTopScorer
+            ? `${homeTeamTopScorer.player.first_name} ${homeTeamTopScorer.player.last_name}`
+            : 'N/A',
+          points: homeTeamPoints,
+          rebs: homeTeamRebs,
+          asts: homeTeamAsts,
+        },
+        visitorTeam: {
+          topScorer: visitorTeamTopScorer
+            ? `${visitorTeamTopScorer.player.first_name} ${visitorTeamTopScorer.player.last_name}`
+            : 'N/A',
+          points: visitorTeamPoints,
+          rebs: visitorTeamRebs,
+          asts: visitorTeamAsts,
+        },
+      };
+    } catch (error) {
+      console.error(`Error fetching top scorers for game ${game_id}:`, error.message);
+      return null;
+    }
+  }
+
+  
   getLogoFileName(teamName) {
     return teamName.replace(/\s+/g, '').toLowerCase();
   }
@@ -138,49 +225,85 @@ class GamesScreen extends Component {
     const { teamLogos } = this.state;
     const isExpanded = this.state.expandedGameIndex === index;
 
-    
-    const displayTime = (this.getFormattedTime(item.status) === "Invalid Date") ? item.time : this.getFormattedTime(item.status)
+    const isValidDate = !isNaN(new Date(item.status).getTime());
+    const displayTime = isValidDate ? this.getFormattedTime(item.status) : item.time;
 
     return (
-        <View style={{ backgroundColor: '#f7f7f7' }}>
-          <TouchableOpacity
-            onPress={() => this.toggleGameExpansion(index)}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? 'lightgrey' : '#f7f7f7',
-            })}
-          >
-            <View style={styles.gameContainer}>
-              <View style={styles.teamContainer}>
-                <View style={styles.logoContainer}>
-                  <Image source={teamLogos[item.home_team.full_name]} style={styles.logo} resizeMode="contain" />
-                </View>
-                <Text>{item.home_team.full_name}</Text>
-                <Text>{item.home_team_score}</Text>
+      <View style={{ backgroundColor: '#f7f7f7' }}>
+        <TouchableOpacity
+          onPress={() => this.toggleGameExpansion(index)}
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? 'lightgrey' : '#f7f7f7',
+          })}
+        >
+          <View style={styles.gameContainer}>
+            <View style={styles.teamContainer}>
+              <View style={styles.logoContainer}>
+                <Image source={teamLogos[item.home_team.full_name]} style={styles.logo} resizeMode="contain" />
               </View>
-              <View style={styles.vsContainer}>
-                <Text style={styles.vsText}>vs</Text>
-                <View style={styles.qContainer}>
-                  <Text>{displayTime}</Text>
-                </View>
-              </View>
-              <View style={styles.teamContainer}>
-                <View style={styles.logoContainer}>
-                  <Image source={teamLogos[item.visitor_team.full_name]} style={styles.logo} resizeMode="contain" />
-                </View>
-                <Text>{item.visitor_team.full_name}</Text>
-                <Text>{item.visitor_team_score}</Text>
+              <Text>{item.home_team.full_name}</Text>
+              <Text>{item.home_team_score}</Text>
+            </View>
+            <View style={styles.vsContainer}>
+              <Text style={styles.vsText}>vs</Text>
+              <View style={styles.qContainer}>
+                <Text>{displayTime}</Text>
               </View>
             </View>
-          </TouchableOpacity>
-          {isExpanded && (
-            <View style={styles.dropdownContainer}>
-              <Text>Top Scorer for {item.home_team.full_name}: {item.home_team_top_scorer}</Text>
-              <Text>Top Scorer for {item.visitor_team.full_name}: {item.visitor_team_top_scorer}</Text>
+            <View style={styles.teamContainer}>
+              <View style={styles.logoContainer}>
+                <Image source={teamLogos[item.visitor_team.full_name]} style={styles.logo} resizeMode="contain" />
+              </View>
+              <Text>{item.visitor_team.full_name}</Text>
+              <Text>{item.visitor_team_score}</Text>
             </View>
-          )}
-        </View>
-      );
-    };
+          </View>
+        </TouchableOpacity>
+        {isExpanded && (
+          <View style={styles.dropdownContainer}>
+          <View style={styles.topPerformerContainer}>
+              <Text style={styles.topScorerText}>{item.home_team.full_name}</Text>
+              <Text style={styles.topScorerName}>{item.home_team_top_scorer}</Text>
+            </View>
+            <View style={styles.statsContainer}>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>PTS</Text>
+                <Text style={styles.statValue}>{item.home_team_pts}</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>REB</Text>
+                <Text style={styles.statValue}>{item.home_team_rebs}</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>AST</Text>
+                <Text style={styles.statValue}>{item.home_team_ast}</Text>
+              </View>
+            </View>
+
+            <View style={styles.topPerformerContainer}>
+              <Text style={styles.topScorerText}>{item.visitor_team.full_name}</Text>
+              <Text style={styles.topScorerName}>{item.visitor_team_top_scorer}</Text>
+            </View>
+            <View style={styles.statsContainer}>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>PTS</Text>
+                <Text style={styles.statValue}>{item.visitor_team_pts}</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>REB</Text>
+                <Text style={styles.statValue}>{item.visitor_team_rebs}</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>AST</Text>
+                <Text style={styles.statValue}>{item.visitor_team_ast}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
 
   renderSeparator = () => {
     return <View style={styles.separator} />;
@@ -252,6 +375,40 @@ const styles = StyleSheet.create({
     padding: 10,
     elevation: 5, // Add elevation to make it appear above other elements
     backgroundColor: '#ebebeb',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  statBox: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black', // Black color for labels
+  },
+  statValue: {
+    fontSize: 18,
+    color: '#333', // Dark grey color for values
+  },
+  topPerformerContainer: {
+    marginBottom: 10,
+    backgroundColor: '#f5f5f5', // Light grey background
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  topScorerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333', // Dark grey
+    marginBottom: 5,
+  },
+  topScorerName: {
+    fontSize: 16,
+    color: '#333333', // Dark grey
   },
 });
 
