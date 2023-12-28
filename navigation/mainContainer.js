@@ -7,13 +7,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import HomeScreen from './screens/home';
-import ProfileScreen from './screens/profile';
+import NewsScreen from './screens/news';
 import GamesScreen from './screens/games';
 import StandingsScreen from './screens/standings'
 
 const homeName = "Home";
 const gamesName = "Games";
-const profileName = "Profile";
+const newsName = "News";
 const standingsName = "Standings";
 
 
@@ -33,8 +33,8 @@ function mainContainer() {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (rn === gamesName) {
                         iconName = focused ? 'basketball' : 'basketball-outline';
-                    } else if (rn === profileName) {
-                        iconName = focused ? 'person' : 'person-outline';
+                    } else if (rn === newsName) {
+                        iconName = focused ? 'newspaper' : 'newspaper-outline';
                     } else if (rn === standingsName) {
                         iconName = focused ? 'stats-chart' : 'stats-chart-outline'
                     }
@@ -51,7 +51,7 @@ function mainContainer() {
                 <Tab.Screen name={homeName} component = {HomeScreen}/>
                 <Tab.Screen name={gamesName} component = {GamesScreen}/>
                 <Tab.Screen name={standingsName} component = {StandingsScreen}/>
-                <Tab.Screen name={profileName} component = {ProfileScreen}/>
+                <Tab.Screen name={newsName} component = {NewsScreen}/>
             </Tab.Navigator>
 
         <StatusBar style="auto" />
