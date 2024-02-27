@@ -53,7 +53,7 @@ class GamesScreen extends Component {
     // Set up an interval to refresh the games every 5 minutes (adjust the interval as needed)
     this.refreshInterval = setInterval(() => {
       this.loadGames();
-    }, 0.5 * 60 * 1000); // 5 minutes in milliseconds
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
   }
 
   componentWillUnmount() {
@@ -63,7 +63,7 @@ class GamesScreen extends Component {
 
   async loadGames() {
     const currentDate = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
-    const testDate = '2023-12-27';
+    const testDate = '2024-01-02';
     const url = `https://www.balldontlie.io/api/v1/games?start_date=${currentDate}&end_date=${currentDate}`;
 
     try {
@@ -326,7 +326,6 @@ class GamesScreen extends Component {
 
 
 const styles = StyleSheet.create({
-  // ... (your existing styles)
 
   gameContainer: {
     flexDirection: 'row',
